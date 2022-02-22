@@ -1,8 +1,9 @@
 package main
 
 import (
+	"time"
+
 	ui "github.com/gizak/termui/v3"
-	"github.com/sqshq/sampler/asset"
 	"github.com/sqshq/sampler/component"
 	"github.com/sqshq/sampler/component/asciibox"
 	"github.com/sqshq/sampler/component/barchart"
@@ -15,11 +16,9 @@ import (
 	"github.com/sqshq/sampler/console"
 	"github.com/sqshq/sampler/data"
 	"github.com/sqshq/sampler/event"
-	"time"
 )
 
 type Starter struct {
-	player  *asset.AudioPlayer
 	lout    *layout.Layout
 	palette console.Palette
 	opt     config.Options
@@ -57,7 +56,7 @@ func (s *Starter) startAll() []*data.Sampler {
 
 func (s *Starter) start(drawable ui.Drawable, consumer *data.Consumer, componentConfig config.ComponentConfig, itemsConfig []config.Item, triggersConfig []config.TriggerConfig) *data.Sampler {
 	cpt := component.NewComponent(drawable, consumer, componentConfig)
-	triggers := data.NewTriggers(triggersConfig, consumer, s.opt, s.player)
+	triggers := data.NewTriggers(triggersConfig, consumer, s.opt)
 	items := data.NewItems(itemsConfig, *componentConfig.RateMs)
 	s.lout.AddComponent(cpt)
 	time.Sleep(10 * time.Millisecond) // desync coroutines
@@ -71,15 +70,10 @@ func main() {
 	console.Init()
 	defer console.Close()
 
-	player := asset.NewAudioPlayer()
-	if player != nil {
-		defer player.Close()
-	}
-
 	palette := console.GetPalette(*cfg.Theme)
 	lout := layout.NewLayout(component.NewStatusBar(*opt.ConfigFile, palette), component.NewMenu(palette))
 
-	starter := &Starter{player, lout, palette, opt, *cfg}
+	starter := &Starter{lout, palette, opt, *cfg}
 	samplers := starter.startAll()
 
 	handler := event.NewHandler(samplers, opt, lout)
